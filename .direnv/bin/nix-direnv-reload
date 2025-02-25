@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -e
+if [[ ! -d "/home/occam/documents/code/numlinalgOne" ]]; then
+  echo "Cannot find source directory; Did you move it?"
+  echo "(Looking for "/home/occam/documents/code/numlinalgOne")"
+  echo 'Cannot force reload with this script - use "direnv reload" manually and then try again'
+  exit 1
+fi
+
+# rebuild the cache forcefully
+_nix_direnv_force_reload=1 direnv exec "/home/occam/documents/code/numlinalgOne" true
+
+# Update the mtime for .envrc.
+# This will cause direnv to reload again - but without re-building.
+touch "/home/occam/documents/code/numlinalgOne/.envrc"
+
+# Also update the timestamp of whatever profile_rc we have.
+# This makes sure that we know we are up to date.
+touch -r "/home/occam/documents/code/numlinalgOne/.envrc" "/home/occam/documents/code/numlinalgOne/.direnv"/*.rc
