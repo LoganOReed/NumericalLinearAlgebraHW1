@@ -25,7 +25,7 @@ function resvec = gmres_solver(alpha, beta, N, max_iter)
     end
 
     w0 = zeros(N*N,1);
-    tol = 1e-4;
+    tol = 1e-3;
 
     [W, flag, relres, iter, resvec] = gmres(A, b, [], tol, max_iter);
 end

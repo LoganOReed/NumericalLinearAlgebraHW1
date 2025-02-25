@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from oct2py import Oct2Py
 from scipy.sparse import diags
+from scipy.linalg import solve
 
 
 def f(x, y):
@@ -19,7 +20,34 @@ def cg(alpha, beta, N, max_iter):
     residuals = np.array(residuals).flatten()
     return residuals
 
+def fom(A, b, m_max = 100):
+    r = b
+    res = np.linalg.norm(r)
+    V = np.empty((A.shape[0], m_max), dtype='float64')
+    V[:, 0] = r / res
+    H = np.zeros((m_max, m_max), dtype='float64')
+    
+    r_norms = [1]
+        
+    for m in range(1, m_max):
+        tmp = A @ V[:, m - 1]
+        H[:m, m - 1] = V[:, :m].T @ tmp
+        w = tmp - V[:, :m] @ H[:m, m - 1]
+        hn = np.linalg.norm(w)
+        V[:, m] = w[:] / hn
+        H[m, m - 1] = hn 
 
+        y = solve(H[:m, :m], V[:, :m].T @ b)
+        
+        x = V[:, :m] @ y
+        r = b - A @ x
+        rnorm = np.linalg.norm(r)
+        r_norms.append(rnorm / res)            
+
+        if (rnorm / res < 1e-3):
+            break
+            
+    return r_norms
 
 def create_system(N, alpha, beta):
     h = 1 / (N + 1)
@@ -137,6 +165,7 @@ def run(alpha, beta, N, i, max_iter, name="test"):
 
     for method in methods:
         solutions[method], errors[method] = iterative_solver(A, b, method, block_size=5)
+    errors["fom"] = fom(A, b)
     residuals = gmres(alpha, beta, N, max_iter)
     errors["gmres"] = residuals / residuals[0]
     if alpha == beta:
@@ -148,10 +177,10 @@ def run(alpha, beta, N, i, max_iter, name="test"):
 if __name__ == "__main__":
     N = 50
     max_iter = 400
-    alpha = [0.0, 1.0, 1.0]
-    beta = [0.0, 0.4, 1.0]
+    alpha = [0.0, 1.0, 1.0, 3.0]
+    beta = [0.0, 0.4, 1.0, 3.0]
 
-    # run(alpha, beta, N, max_iter)
+    # run([1.0], [0.4], N, 0, max_iter)
     for i in range(len(alpha)):
         run(alpha[i], beta[i], N, i, max_iter, name=f"res{i}")
         print(f"finished {i} iteration")
